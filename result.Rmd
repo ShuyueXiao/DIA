@@ -1,0 +1,98 @@
+---
+title: "SoccerResults"
+author: "Cynthia Xiao"
+date: "October 17, 2018"
+output: html_document
+---
+game result 
+```{r data}
+
+Survey <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys.csv", header = T)
+Result <- read.csv("C:/Users/shuyuex2/Desktop/WomenSoccerResult.csv", header = T)
+Result$date <- as.Date(Result$date, "%m/%d/%Y")
+Survey$qtest <- as.Date(Survey$qtest, "%Y-%m-%d")
+
+Result <- cbind(Result, MeanSleep=0, MeanStress=0, MeanSore=0)
+
+for (i in 1:nrow(Result)) {
+  set <- 0
+  for (j in 1:7) {
+    set <- c(set,which(Survey$qtest==Result$date[i]-j))
+  }
+  Result$MeanSleep[i] <- mean(Survey$Sleep[set[-1]])
+  Result$MeanStress[i] <- mean(Survey$PT_Stress_A[set[-1]])
+  Result$MeanSore[i] <- mean(Survey$Sore_A_AM_1[set[-1]])
+}
+mean(Result$MeanSleep[which(Result$win.lost=="W")])
+mean(Result$MeanSleep[which(Result$win.lost=="L")])
+#library(xlsx)
+write.csv(Result,"Result_added.csv")
+
+```
+
+
+```{r stress rank}
+Survey <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys.csv", header = T)
+Result <- read.csv("C:/Users/shuyuex2/Desktop/WomenSoccerResult.csv", header = T)
+Result$date <- as.Date(Result$date, "%m/%d/%Y")
+Survey$qtest <- as.Date(Survey$qtest, "%Y-%m-%d")
+
+Result <- cbind(Result, MeanSleep=0, MeanStress=0, MeanSore=0)
+
+for (i in 1:nrow(Result)) {
+  set <- 0
+  for (j in 1:6) {
+    set <- c(set,which(Survey$qtest==Result$date[i]-j))
+  }
+  Result$MeanSleep[i] <- mean(Survey$Sleep[set[-1]])
+  Result$MeanStress[i] <- mean(Survey$PT_Stress_A[set[-1]])
+  Result$MeanStress_academic[i] <- 5-mean(Survey$PT_Stress_Rank_A_1[set[-1]])
+  Result$MeanStress_social[i] <- 5-mean(Survey$PT_Stress_Rank_A_2[set[-1]])
+  Result$MeanStress_family[i] <- 5-mean(Survey$PT_Stress_Rank_A_3[set[-1]])
+  Result$MeanStress_athletics[i] <- 5-mean(Survey$PT_Stress_Rank_A_4[set[-1]])
+  Result$MeanSore[i] <- mean(Survey$Sore_A_AM_1[set[-1]])
+}
+#mean(Result$MeanSleep[which(Result$win.lost=="W")])
+#mean(Result$MeanSleep[which(Result$win.lost=="L")])
+#library(xlsx)
+write.csv(Result,"Result_added_rank.csv")
+
+```
+
+
+```{r result17}
+
+Survey17 <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys17.csv", header = T)
+Result17 <- read.csv("C:/Users/shuyuex2/Desktop/WomenSoccerResult17.csv", header = T)
+Result17$date <- as.Date(Result17$date, "%m/%d/%Y")
+Survey17$StartDate <- as.Date(Survey17$StartDate, "%Y-%m-%d")
+
+for (i in 1:nrow(Result17)) {
+  set <- 0
+  for (j in 1:6) {
+    set <- c(set,which(Survey17$StartDate==Result17$date[i]-j))
+  }
+  Result17$MeanSleep[i] <- mean(Survey17$HrSleep_A_AM_1[set[-1]])
+  Result17$MeanStress[i] <- mean(Survey17$PT_Stress_A[set[-1]])
+  Result17$MeanStress_academic[i] <- 5-mean(Survey17$PT_Stress_Rank_A_1[set[-1]])
+  Result17$MeanStress_social[i] <- 5-mean(Survey17$PT_Stress_Rank_A_2[set[-1]])
+  Result17$MeanStress_family[i] <- 5-mean(Survey17$PT_Stress_Rank_A_3[set[-1]])
+  Result17$MeanStress_athletics[i] <- 5-mean(Survey17$PT_Stress_Rank_A_4[set[-1]])
+  Result17$MeanSore[i] <- mean(Survey17$Sore_A_AM_1[set[-1]])
+}
+#mean(Result$MeanSleep[which(Result$win.lost=="W")])
+#mean(Result$MeanSleep[which(Result$win.lost=="L")])
+#library(xlsx)
+write.csv(Result17,"Result_added_rank17.csv")
+
+
+
+
+
+
+
+
+```
+
+
+
