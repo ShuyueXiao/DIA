@@ -1,0 +1,205 @@
+---
+title: "First Project"
+author: "Cynthia Xiao"
+date: "October 2, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Data Management}
+
+Morning <- read.csv("C://Users/shuyuex2/Desktop/Soccer FA18/Morning_November 6, 2018_12.43.csv", header = T)
+PostPractice <- read.csv("C://Users/shuyuex2/Desktop/Soccer FA18/Post Practice_November 6, 2018_12.44.csv", header = T)
+Evening <- read.csv("C://Users/shuyuex2/Desktop/Soccer FA18/Evening_November 6, 2018_12.44.csv", header = T)
+
+Morning <- Morning[-c(1:2),c("Name","RHR","Sleep","qtest")]
+
+PostPractice <- PostPractice[-c(1,2),c("Name","RPE_Post_A","Perf_Post_A","WTL_1","WTL_2","WTL_3","Injuries","Phys_Read_Pre_G","Ment_Read_Pre_g","qtest")]
+
+Evening <- Evening[-c(1,2),c("Name","Ill_A_AM","PT_Stress_A","PT_Stress_Rank_A_1","PT_Stress_Rank_A_2","PT_Stress_Rank_A_3","PT_Stress_Rank_A_4","Sore_A_AM_1","Sore_G_v_S_A_AM","qtest")]
+
+#Survey$Sleep <- as.numeric(Survey$Sleep)
+
+
+Survey <- merge(Morning, Evening, by.x=c("Name","qtest"), by.y=c("Name","qtest"))
+Survey <- merge(Survey,PostPractice,by.x=c("Name","qtest"), by.y=c("Name","qtest"))
+Survey$qtest <- as.Date(Survey$qtest,"%m/%d/%Y")
+Survey <- Survey[order(Survey$qtest, decreasing = FALSE),]
+Survey <- Survey[complete.cases(Survey[,"qtest"]),]
+
+
+
+#deal with NA
+
+for(i in 1:ncol(Survey)) {
+  if(all(is.na(as.numeric(as.character(Survey[,i]))))==TRUE)
+    next
+  
+  Survey[,i] <- as.numeric(as.character(Survey[,i]))
+  Survey[which(is.na(Survey[,i])),i] <- mean(na.omit(Survey[,i]))
+  #Survey[,i] <- as.factor(Survey[,i])
+}
+
+
+write.csv(Survey,"Surveys.csv")
+
+Survey <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys.csv", header = T)
+```
+
+A try to regression
+```{r test}
+test <- Survey
+library(zoo)
+test <- sapply(1:ncol(test),function(i){
+  test[,i] <- na.locf(test[,i],fromLast = TRUE)
+  test[,i]
+})
+
+
+Survey$Sleep <- as.numeric(as.character(Survey$Sleep))
+
+Survey$Injuries<-as.character(Survey$Injuries)
+Survey$Injuries[which(Survey$Injuries=="Yes")]<- 1
+Survey$Injuries[which(Survey$Injuries!=1)]<- 0
+Survey$Injuries <- as.numeric(Survey$Injuries)
+#Survey$Injuries <- as.factor(Survey$Injuries)
+
+
+Survey$Ill_A_AM<-as.character(Survey$Ill_A_AM)
+Survey$Ill_A_AM[which(Survey$Ill_A_AM=="Yes")]<- 1
+Survey$Ill_A_AM[which(Survey$Ill_A_AM!=1)]<- 0
+Survey$Ill_A_AM <- as.numeric(Survey$Ill_A_AM)
+#Survey$Ill_A_AM <- as.factor(Survey$Ill_A_AM)
+
+
+Survey$Sore_G_v_S_A_AM<-as.character(Survey$Sore_G_v_S_A_AM)
+Survey$Sore_G_v_S_A_AM[which(Survey$Sore_G_v_S_A_AM=="Specific")] <- 1
+Survey$Sore_G_v_S_A_AM[which(Survey$Sore_G_v_S_A_AM != 1)]<- 0
+Survey$Sore_G_v_S_A_AM <- as.numeric(Survey$Sore_G_v_S_A_AM)
+#Survey$Sore_G_v_S_A_AM <- as.factor(Survey$Sore_G_v_S_A_AM)
+
+
+Survey$PT_Stress_A <-as.character(Survey$PT_Stress_A)
+Survey$PT_Stress_A[which(Survey$PT_Stress_A=="Specific")] <- 1
+Survey$PT_Stress_A[which(Survey$PT_Stress_A!=1)]<- 0
+Survey$PT_Stress_A <- as.numeric(Survey$PT_Stress_A)
+#Survey$PT_Stress_A <- as.factor(Survey$PT_Stress_A)
+
+
+model_glm <- glm(Injuries ~ Sleep + PT_Stress_A + Sore_G_v_S_A_AM, data = Survey, family = "binomial")
+summary(model_glm)
+
+plot(model_glm)
+```
+
+A try to classification
+```{r classification}
+
+library(randomForest)
+
+library(ggplot2)
+#model_rf <- randomForest(Injuries ~ Sleep + PT_Stress_A + Sore_G_v_S_A_AM, data = Survey)
+#summary(model_rf)
+#plot(model_rf)
+
+Survey <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys.csv")
+
+p <- ggplot(Survey,aes(x=PT_Stress_A,y=Sore_A_AM_1,color=Injuries))
+p + geom_jitter(alpha=0.3)+
+  scale_color_manual(breaks=c("Yes","No"), values = c("darkgreen","red"))
+
+p <- ggplot(Survey,aes(x=Sleep,y=Sore_A_AM_1,color=Injuries))
+p + geom_jitter(alpha=0.3)+
+  scale_color_manual(breaks=c("Yes","No"), values = c("darkgreen","red"))
+
+p <- ggplot(Survey,aes(x=Sleep,y=PT_Stress_A,color=Injuries))
+p + geom_jitter(alpha=0.3)+
+  scale_color_manual(breaks=c("Yes","No"), values = c("darkgreen","red"))
+
+#rf <- randomForest(Injuries ~ Sleep + Sore_A_AM_1 + PT_Stress_A, data = Survey)
+            
+```
+
+
+
+
+
+
+Previous season data
+```{r 2017 season}
+Survey17_fall <- read.csv("C:/Users/shuyuex2/Desktop/Illinois Women's Soccer FA17 - Athlete Only_October 23, 2018_13.17.csv", header = T)[-c(1:2),c("StartDate","Name_A","HrSleep_A_AM_1","Sore_A_AM_1","PT_Stress_A","PT_Stress_Rank_A_1","PT_Stress_Rank_A_2",	"PT_Stress_Rank_A_3",	"PT_Stress_Rank_A_4")]
+Survey17_Spring <- read.csv("C:/Users/shuyuex2/Desktop/Illinois Women's Soccer SP18 - Athlete Survey_October 23, 2018_13.19.csv", header = T)[-c(1:2),c("StartDate","Name_A","HrSleep_A_AM_1","Sore_A_AM_1","PT_Stress_A","PT_Stress_Rank_A_1","PT_Stress_Rank_A_2",	"PT_Stress_Rank_A_3",	"PT_Stress_Rank_A_4")]
+
+Survey17 <- rbind(Survey17_fall,Survey17_Spring)
+
+Survey17$StartDate <- as.Date(Survey17$StartDate,"%m/%d/%Y")
+Survey17 <- Survey17[order(Survey17$StartDate, decreasing = FALSE),]
+Survey17 <- Survey17[complete.cases(Survey17[,"StartDate"]),]
+
+
+
+#deal with NA
+
+for(i in 1:ncol(Survey17)) {
+  if(all(is.na(as.numeric(as.character(Survey17[,i]))))==TRUE)
+    next
+  
+  Survey17[,i] <- as.numeric(as.character(Survey17[,i]))
+  Survey17[which(is.na(Survey17[,i])),i] <- mean(na.omit(Survey17[,i]))
+  #Survey[,i] <- as.factor(Survey[,i])
+}
+
+
+#library(xlsx)
+write.csv(Survey17,"Surveys17.csv")
+
+Survey17 <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/Surveys.csv", header = T)
+
+
+```
+
+
+
+3d Plot
+```{r 3d plot}
+
+library(scatterplot3d)
+
+scatterplot3d(Survey$Sleep,Survey$PT_Stress_A,Survey$Sore_A_AM_1, main="3D Scatterplot")
+
+library(plotly)
+library(magrittr)
+
+#3d plpot for stress, sleep, sore related to injuries
+p1 <- plot_ly(Survey, x=~Sleep,y=~PT_Stress_A,z=~Sore_A_AM_1, 
+             color = ~Injuries, colors = c('blue', 'red'),size = 0.5) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'Sleep'),
+                     yaxis = list(title = 'Stress'),
+                     zaxis = list(title = 'Sore')))
+#show the plot:
+p1
+
+
+#3d plpot for Meanstress, Meansleep, Meansore related to win/lost
+p2 <- plot_ly(Result, x=~MeanSleep,y=~MeanSleep,z=~MeanStress, 
+             color = ~win.lost, colors = c('blue', 'red'),size = 0.5) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'academic'),
+                     yaxis = list(title = 'social'),
+                     zaxis = list(title = 'family')))
+p2
+
+#3d plpot for Meanstress, Meansleep, Meansore related to home/away
+p3 <- plot_ly(Result, x=~MeanSleep,y=~MeanSleep,z=~MeanStress, 
+             color = ~home.away.nuetral, colors = c('blue', 'red'),size = 0.5) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'academic'),
+                     yaxis = list(title = 'social'),
+                     zaxis = list(title = 'family')))
+p3
+
+```
