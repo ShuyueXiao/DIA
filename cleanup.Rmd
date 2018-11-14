@@ -1,0 +1,100 @@
+---
+title: "cleanup"
+author: "Cynthia Xiao"
+date: "November 14, 2018"
+output: html_document
+---
+
+before reading export2, we need o delete some rows and columns in excel, or "read.csv" doesn't work
+```{r }
+export <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/export2.csv",header = T)
+export$qtest <- as.character(export$qtest)
+
+export$qtest[which(is.na(as.numeric(substring(export$qtest,1,1)))==FALSE)]<-0
+
+for (i in 1:nrow(export)) {
+  if(export$qtest[i]==0)export$qtest[i]<-export$qtest[i-1]
+}
+export$qtest <- substring(export$qtest,5,10)
+export$qtest<-gsub(" ", "-", export$qtest)
+export$qtest<-paste(export$qtest, "18", sep="-")
+export$Type <- as.character(export$Type)
+
+export <-export[-which(export$Type==""),]
+
+write.csv(export,"C:/Users/shuyuex2/Desktop/Soccer FA18/export_clean1.csv")
+```
+
+
+```{r }
+#############################################################################
+#before reading clean1, we need to transfer qtest to a readable format in excel#
+#############################################################################
+library(lubridate)
+export_clean1 <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/export_clean1.csv")
+export_clean1$qtest<- as.Date(export_clean1$qtest,"%m/%d/%Y")
+
+
+add1 <- as.data.frame(matrix(0,1,36))
+colnames(add1) <- colnames(export_clean1)
+
+
+begin <- as.Date("2018-07-31")
+end <- as.Date("2018-10-30")
+
+daydiff1 <- as.numeric(export_clean1$qtest[1]-begin)
+daydiff2 <- as.numeric(end-export_clean1$qtest[nrow(export_clean1)])
+if(daydiff1==0)
+{
+  add <- export_clean1[1,]
+}
+
+if(daydiff1>0){
+  add1$qtest <- begin
+  add <- add1
+  if(daydiff1==1)break
+  else{
+    for (i in 2:daydiff1) {
+      add1$qtest <- begin+i
+      add <- rbind(add,add1)
+    }
+  }
+}
+
+
+
+for (i in 2:nrow(export_clean1)) 
+  {
+    n <- as.numeric(export_clean1$qtest[i]-export_clean1$qtest[i-1])
+    
+    if(n==1||n==0) {add<-rbind(add,export_clean1[i,])}
+    else{
+      for (j in 1:(n-1)) {
+        add1$qtest<- export_clean1$qtest[i-1]+j
+        add <- rbind(add, add1)
+      }
+      add<-rbind(add,export_clean1[i,])
+    }
+  
+}
+
+if(daydiff2>0){
+  for (i in 1:daydiff2) {
+    add1$qtest<- export_clean1$qtest[nrow(export_clean1)]+i
+    add<- rbind(add,add1)
+  }
+}
+
+add <- add[order(add$qtest, decreasing = FALSE),]
+add$Name <- "Shuyue"
+add$Type<- as.character(add$Type)
+add$Type[which(is.na(add$Type))] <-"Off"
+for (i in 5:ncol(add)) {
+  add[,i] <- as.character(add[,i])
+  add[which(is.na(add[,i])),i] <-0
+}
+
+write.csv(add,"C:/Users/shuyuex2/Desktop/Soccer FA18/export_clean2.csv")
+
+
+```
