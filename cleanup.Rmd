@@ -27,9 +27,9 @@ write.csv(export,"C:/Users/shuyuex2/Desktop/Soccer FA18/export_clean1.csv")
 
 
 ```{r }
-#############################################################################
+################################################################################
 #before reading clean1, we need to transfer qtest to a readable format in excel#
-#############################################################################
+################################################################################
 library(lubridate)
 export_clean1 <- read.csv("C:/Users/shuyuex2/Desktop/Soccer FA18/export_clean1.csv")
 export_clean1$qtest<- as.Date(export_clean1$qtest,"%m/%d/%Y")
